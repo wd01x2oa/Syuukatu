@@ -9,7 +9,7 @@
 - GPT擬似OS ＋ バックアップシステム
 
 ## 関連リンク
-- [Qiita](https://qiita.com/wd01x2oa)
+- [Qiita (詳細動画リンクあり)](https://qiita.com/wd01x2oa)
 
 ## こんな仕事がしたい
 - AI × 組込み × ビジュアル処理
