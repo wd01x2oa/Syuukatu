@@ -25,4 +25,5 @@ Autoware初期型のデモSSDが家に転がっています
 ---
 
 **お問い合わせ**  
-https://x.com/wd01x2oaからお願いします。
+https://x.com/wd01x2oa
+からお願いします。
