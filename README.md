@@ -1,3 +1,11 @@
+Portfolio Highlights
+
+AI & Deep Learning (YOLOv5/v8)
+Autonomous Driving (Autoware Universe, ROS)
+FFT & DSP experiments in Python
+Embedded & CUDA manual builds
+More hands-on articles on Qiita / Zenn.
+
 # 就活ポートフォリオ
 
 このリポジトリは、私の技術的な強みとポートフォリオをまとめています。
