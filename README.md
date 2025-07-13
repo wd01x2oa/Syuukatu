@@ -9,10 +9,13 @@
 - GPT擬似OS ＋ バックアップシステム
 
 ## 関連リンク
+- Yolo V5+V8　Autoware初期型の環境構築
 - [Qiita (詳細動画リンクあり)](https://qiita.com/wd01x2oa)
 
 - FFTの勉強に使用した参考https://zenn.dev/labcode/books/3v5y3msrej7vu9
-
+Autoware初期型のデモSSDが家に転がっています
+動作はかなり怪しいで
+試したい方はどうぞ
 ## こんな仕事がしたい
 - AI × 組込み × ビジュアル処理
 - リアルタイムFFT × 画像 × Python
