@@ -10,8 +10,9 @@
 
 ## 関連リンク
 - [Qiita (詳細動画リンクあり)](https://qiita.com/wd01x2oa)
--FFTの勉強に使用した参考
-- https://zenn.dev/labcode/books/3v5y3msrej7vu9
+
+- FFTの勉強に使用した参考https://zenn.dev/labcode/books/3v5y3msrej7vu9
+
 ## こんな仕事がしたい
 - AI × 組込み × ビジュアル処理
 - リアルタイムFFT × 画像 × Python
