@@ -12,7 +12,9 @@
 - Yolo V5+V8　Autoware初期型の環境構築
 - [Qiita (詳細動画リンクあり)](https://qiita.com/wd01x2oa)
 
-- FFTの勉強に使用した参考https://zenn.dev/labcode/books/3v5y3msrej7vu9
+- FFTの勉強に使用した参考
+- https://zenn.dev/labcode/books/3v5y3msrej7vu9
+骨董品
 Autoware初期型のデモSSDが家に転がっています
 動作はかなり怪しいで
 試したい方はどうぞ
@@ -23,4 +25,4 @@ Autoware初期型のデモSSDが家に転がっています
 ---
 
 **お問い合わせ**  
-GitHub Issues または Qiita コメントからお願いします。
+https://x.com/wd01x2oaからお願いします。
