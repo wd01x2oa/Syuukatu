@@ -1,0 +1,409 @@
+import os
+import openpyxl
+import tkcalendar
+import tkinter as tk
+from tkinter import Entry
+from tkinter import filedialog, ttk
+from tkcalendar import Calendar
+import datetime
+
+# カテゴリーと商品名の対応関係を辞書で管理
+category_products = { 
+    'バルク': ['プレーン', 'ココナッツ', 'アールグレイ', 'ティラミス', 'ショコラ', 'ナッツ＆ハニー', '黒糖きなこ', '抹茶', 'COFFE', 'みそ七味', 'コンソメペッパー', '薬膳カレー', '酒粕＆メープルシナモン'],
+    'パッケジー類': ['プレーンMIX', 'ココナッツMIX', 'アールグレイMIX', 'ティラミスMIX', 'ショコラMIX', 'みそ七味MIX', 'ブラックペッパー', '薬膳カレー', '酒粕&メープルシナモン'],
+    'ナッツ類': ['パンプキンシード', 'サンフラワーシード', 'クルミ生', 'きなこくるみ'],
+    '麦類': ['オートミール', 'ライフレーク'],
+    'ベリー類': ['カリフォルニレーズン', 'マスカットレーズン', 'ブルーベリー', 'クランベリー', 'インカベリー', 'カレンツ'],
+    'カカオ': ['ロウカカオニブ', 'チョコドロップS', 'チョコダークC61', 'チョコC70', 'ホワイト40'],
+    'MIXベリー': ['ファイバーMIX', 'サワーレイトMIX'],
+    '野菜類': ['ニンジン', '玉ねぎ'],
+    'その他ドライフルーツ': ['ダイスドフィグ', 'ダイスドデーツ', 'ココナッツチップ生', 'マンゴ', 'パイン', 'ジンジャースライス']
+}
+
+class Mywindow(tk.Tk):
+  
+    def __init__(self):
+        super().__init__()
+        self.title('商品管理')
+        self.stock = {}
+        self.geometry('400x300')
+      
+        # 読み込みボタンを作成
+        self.load_button = tk.Button(self, text="ファイルを読み込む", command=self.load_file)
+        self.load_button.pack()
+
+        # 入荷ボタンを作成
+        self.receipt_button = tk.Button(self, text="入荷", command=self.open_receipt_window)
+        self.receipt_button.pack()  
+        
+        # 出荷ボタンを作成
+        self.shipment_button = tk.Button(self, text="出荷", command=self.open_shipment_window)
+        self.shipment_button.pack()
+
+        # 在庫表示ボタンを作成
+        self.stock_button = tk.Button(self, text="在庫表示", command=self.display_stock)
+        self.stock_button.pack()
+
+        # キーワード検索ボタンを作成
+        self.keyword_button = tk.Button(self, text="キーワード検索", command=self.open_keyword_window)
+        self.keyword_button.pack()
+    
+    def load_file(self):
+        # ファイル選択ダイアログを表示
+        file_path = filedialog.askopenfilename(filetypes=[("Excelファイル", "*.xlsx")])
+        
+        # 既存のExcelファイルを読み込む
+        if file_path:
+            self.file_path = file_path  # ファイルパスを保存
+            wb = openpyxl.load_workbook(file_path)
+
+            # "在庫データ"シートから在庫データを読み込む
+            if "在庫データ" in wb.sheetnames:
+                sheet = wb["在庫データ"]
+                self.stock = {(row[0], row[1]): row[2] for row in sheet.iter_rows(min_row=2, values_only=True)}
+            else:
+                self.stock = {}
+
+            # 読み込み完了のメッセージを表示
+            tk.messagebox.showinfo("読み込み完了", "既存のデータを読み込みました")
+            print(f"Loaded stock: {self.stock}")  # デバッグ用の出力文を追加
+    def save_button_click(self):
+        # 保存ボタンがクリックされた時の処理
+       
+        # ファイル選択ダイアログを表示し、保存先のExcelファイルを選択
+        file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", initialfile="在庫管理.xlsx", title="Excelファイルの保存先を選択")
+       
+        # ファイルが選択された場合
+        if file_path:
+            # 選択されたファイルが存在する場合、そのファイルを開く
+            if os.path.isfile(file_path):
+                wb = openpyxl.load_workbook(file_path)
+                sheet = wb.active
+            # 選択されたファイルが存在しない場合、新しいワークブックを作成
+            else:
+                wb = openpyxl.Workbook()
+                sheet = wb.active
+                # 新しいワークブックのヘッダー行を設定
+                sheet['A1'] = '商品名カテゴリー'
+                sheet['B1'] = '商品名'
+                sheet['C1'] = '数量'
+                sheet['D1'] = '入荷日'
+                sheet['E1'] = '出荷日'
+                sheet['F1'] = 'シリアルナンバー'
+                sheet['G1'] = '在庫数'
+        # ファイルが選択されなかった場合、処理を終了
+        else:
+            return
+       
+        # 入力された値を取得
+        category = self.category_combo.get()
+        name = self.Product_Name_Category_Box.get()
+       
+        # 数量の入力値をチェック
+        try:
+            quantity = int(self.quantity_entry.get())
+        except ValueError:
+            tk.messagebox.showerror("エラー", "数量は数値で入力してください")
+            return
+
+        serial_number = self.serial_number_entry.get()
+       
+        # 入荷日の入力値を文字列に変換
+        receipt_date = self.receipt_date_entry.selection_get()
+        receipt_date_str = receipt_date.strftime('%Y-%m-%d')
+       
+        # 出荷日の入力値を文字列に変換
+        shipment_date = self.date_of_shipment_entry.selection_get()
+        shipment_date_str = shipment_date.strftime('%Y-%m-%d')
+       
+        # 在庫数の入力値をチェック
+        try:
+            stock = int(self.stock_entry.get())
+        except ValueError:
+            tk.messagebox.showerror("エラー", "在庫数は数値で入力してください")
+            return
+
+        # 入力された値を一行のデータとして作成
+        row = [category, name, quantity, receipt_date_str, shipment_date_str, serial_number, stock]
+        # データをExcelシートに追加
+        sheet.append(row)
+        # Excelファイルを保存
+        wb.save(file_path)
+        # 保存完了のメッセージを表示
+        tk.messagebox.showinfo("保存完了", "商品情報を保存しました")
+       
+        # 入力欄をクリア
+        self.quantity_entry.delete(0, tk.END)
+        self.serial_number_entry.delete(0, tk.END)
+        self.stock_entry.delete(0, tk.END)
+
+    def open_receipt_window(self):
+        # 入荷ウィンドウを作成
+        receipt_window = tk.Toplevel(self)
+        receipt_window.title("入荷")
+        receipt_window.geometry("400x300")
+
+        # 入荷情報を格納するリストを作成
+        receipt_data = []
+
+        # 商品カテゴリーラベルを作成
+        category_label = tk.Label(receipt_window, text='商品カテゴリー')
+        category_label.pack()
+
+        # 商品カテゴリーコンボボックスを作成し、選択肢を設定
+        category_combo = ttk.Combobox(receipt_window, values=list(category_products.keys()))
+        category_combo.pack()
+
+        # 商品名ラベルを作成
+        name_label = tk.Label(receipt_window, text="商品名")
+        name_label.pack()
+
+        # 商品名カテゴリーボックスを作成
+        product_name_combo = ttk.Combobox(receipt_window)
+        product_name_combo.pack()
+
+        # 数量ラベルを作成
+        quantity_label = tk.Label(receipt_window, text='数量')
+        quantity_label.pack()
+
+        # 数量入力欄を作成
+        quantity_entry = tk.Entry(receipt_window)
+        quantity_entry.pack()
+
+        # 入荷日の日付のラベルを作成
+        receipt_date_label = tk.Label(receipt_window, text="入荷日")
+        receipt_date_label.pack()
+
+        # 入荷日の日付の入力欄（カレンダー）を作成
+        receipt_date_entry = tkcalendar.Calendar(receipt_window, date_pattern='YYYY-MM-DD')
+        receipt_date_entry.pack()
+
+        # シリアルナンバーラベルを作成
+        serial_number_label = tk.Label(receipt_window, text="シリアルナンバー")
+        serial_number_label.pack()
+
+        # シリアルナンバー入力欄を作成
+        serial_number_entry = tk.Entry(receipt_window)
+        serial_number_entry.pack()
+
+        # 追加ボタンを作成し、クリック時のイベントを設定
+        add_button = tk.Button(receipt_window, text="追加", command=lambda: self.add_receipt_data(receipt_data, category_combo.get(), product_name_combo.get(), quantity_entry.get(), receipt_date_entry.get_date(), serial_number_entry.get()))
+        add_button.pack()
+
+        # 保存ボタンを作成し、クリック時のイベントを設定
+        save_button = tk.Button(receipt_window, text="保存", command=lambda: self.save_data(receipt_data, []))
+        save_button.pack()
+
+        # カテゴリーコンボボックスの選択時のイベントを設定
+        category_combo.bind('<<ComboboxSelected>>', lambda event: self.update_name_combo(event, product_name_combo))
+
+        # カテゴリーコンボボックスの初期値を設定
+        category_combo.set('バルク')
+        # 商品名コンボボックスの初期値を更新
+        self.update_name_combo(None, product_name_combo)
+    def add_receipt_data(self, receipt_data, category, name, quantity, receipt_date, serial_number):
+        # 入荷データを追加する処理を実装
+
+        # 数量の入力値をチェック
+        try:
+            quantity = int(quantity)
+            if quantity <= 0:
+                raise ValueError
+        except ValueError:
+            tk.messagebox.showerror("エラー", "数量は正の整数で入力してください")
+            return
+
+        # 入荷日を文字列に変換
+        receipt_date_str = receipt_date.strftime('%Y-%m-%d')
+
+        # 入力された値を一行のデータとしてリストに追加
+        receipt_data.append([category, name, quantity, receipt_date_str, serial_number])
+
+    def open_shipment_window(self):
+        # 出荷ウィンドウを作成
+        shipment_window = tk.Toplevel(self)
+        shipment_window.title("出荷")
+        shipment_window.geometry("400x300")
+
+        # 出荷情報を格納するリストを作成
+        shipment_data = []
+
+        # 商品カテゴリーラベルを作成
+        category_label = tk.Label(shipment_window, text='商品カテゴリー')
+        category_label.pack()
+
+        # 商品カテゴリーコンボボックスを作成し、選択肢を設定
+        category_combo = ttk.Combobox(shipment_window, values=list(category_products.keys()))
+        category_combo.pack()
+
+        # 商品名ラベルを作成
+        name_label = tk.Label(shipment_window, text="商品名")
+        name_label.pack()
+
+        # 商品名カテゴリーボックスを作成
+        product_name_combo = ttk.Combobox(shipment_window)
+        product_name_combo.pack()
+
+        # 数量ラベルを作成
+        quantity_label = tk.Label(shipment_window, text='数量')
+        quantity_label.pack()
+
+        # 数量入力欄を作成
+        quantity_entry = tk.Entry(shipment_window)
+        quantity_entry.pack()
+
+        # 出荷日の日付のラベルを作成
+        shipment_date_label = tk.Label(shipment_window, text="出荷日")
+        shipment_date_label.pack()
+
+        # 出荷日の日付の入力欄（カレンダー）を作成
+        shipment_date_entry = tkcalendar.Calendar(shipment_window, date_pattern='YYYY-MM-DD')
+        shipment_date_entry.pack()
+
+        # 追加ボタンを作成し、クリック時のイベントを設定
+        add_button = tk.Button(shipment_window, text="追加", command=lambda: self.add_shipment_data(shipment_data, category_combo.get(), product_name_combo.get(), quantity_entry.get(), shipment_date_entry.get_date()))
+        add_button.pack()
+
+        # 保存ボタンを作成し、クリック時のイベントを設定
+        save_button = tk.Button(shipment_window, text="保存", command=lambda: self.save_data([], shipment_data))
+        save_button.pack()
+
+        # カテゴリーコンボボックスの選択時のイベントを設定
+        category_combo.bind('<<ComboboxSelected>>', lambda event: self.update_name_combo(event, product_name_combo))
+
+        # カテゴリーコンボボックスの初期値を設定
+        category_combo.set('バルク')
+        # 商品名コンボボックスの初期値を更新
+        self.update_name_combo(None, product_name_combo)
+
+    def add_shipment_data(self, shipment_data, category, name, quantity, shipment_date):
+        # 出荷データを追加する処理を実装
+        print(f"Selected product: {category} - {name}")  # デバッグ用の出力文を追加
+        print(f"Current stock: {self.stock}")  # デバッグ用の出力文を追加
+        # 在庫情報を更新
+        if (category, name) in self.stock:
+            if self.stock[(category, name)] >= int(quantity):
+                self.stock[(category, name)] -= int(quantity)
+            else:
+                tk.messagebox.showerror("エラー", "在庫が不足しています")
+                return
+        else:
+            tk.messagebox.showerror("エラー", "選択された商品の在庫情報がありません")
+            return
+
+        # 数量の入力値をチェック
+        try:
+            quantity = int(quantity)
+            if quantity <= 0:
+                raise ValueError
+        except ValueError:
+            tk.messagebox.showerror("エラー", "数量は正の整数で入力してください")
+            return
+
+        # 出荷日を文字列に変換
+        shipment_date_str = shipment_date.strftime('%Y-%m-%d')
+
+        # 入力された値を一行のデータとしてリストに追加
+        shipment_data.append([category, name, quantity, shipment_date_str])
+
+    def update_name_combo(self, event, product_name_combo):
+        # 選択されたカテゴリーに応じて、商品名コンボボックスの選択肢を更新
+        selected_category = event.widget.get() if event else 'バルク'
+        product_name_combo['values'] = category_products.get(selected_category, [])
+
+    def save_data(self, receipt_data, shipment_data):
+        # 既存のファイルを開く
+        if hasattr(self, 'file_path') and os.path.isfile(self.file_path):
+            wb = openpyxl.load_workbook(self.file_path)
+        else:
+            wb = openpyxl.Workbook()
+
+        # 入荷データ用のシートを選択または作成
+        if "入荷データ" in wb.sheetnames:
+            receipt_sheet = wb["入荷データ"]
+        else:
+            receipt_sheet = wb.create_sheet("入荷データ")
+            receipt_header = ['商品名カテゴリー', '商品名', '数量', '入荷日', 'シリアルナンバー']
+            receipt_sheet.append(receipt_header)
+
+        # 出荷データ用のシートを選択または作成
+        if "出荷データ" in wb.sheetnames:
+            shipment_sheet = wb["出荷データ"]
+        else:
+            shipment_sheet = wb.create_sheet("出荷データ")
+            shipment_header = ['商品名カテゴリー', '商品名', '数量', '出荷日']
+            shipment_sheet.append(shipment_header)
+
+        # 入荷データを追加
+        for row in receipt_data:
+            receipt_sheet.append(row)
+
+        # 出荷データを追加
+        for row in shipment_data:
+            shipment_sheet.append(row)
+
+        # 既存のファイルに上書き保存
+        wb.save(self.file_path)
+
+        # 保存完了のメッセージを表示
+        tk.messagebox.showinfo("保存完了", "データを保存しました")
+
+    def display_stock(self):
+        stock_window = tk.Toplevel(self)
+        stock_window.title("在庫表示")
+
+        # ツリービューを作成
+        tree = ttk.Treeview(stock_window)
+        tree["columns"] = ("quantity",)
+        tree.heading("#0", text="商品名")
+        tree.heading("quantity", text="在庫数")
+
+        # 在庫データを表示
+        for category, products in category_products.items():
+            category_id = tree.insert("", "end", text=category)
+            for product in products:
+                quantity = self.stock.get((category, product), 0)
+                tree.insert(category_id, "end", text=product, values=(quantity,))
+
+        tree.pack()
+
+    def open_keyword_window(self):
+        # キーワードウィンドウを作成
+        keyword_window = tk.Toplevel(self)
+        keyword_window.title('キーワード検索')
+        keyword_window.geometry("400x300")
+
+        # キーワード入力欄を作成
+        keyword_entry = tk.Entry(keyword_window)
+        keyword_entry.pack()
+
+        # 検索ボタンを作成
+        search_button = tk.Button(keyword_window, text="検索", command=lambda: self.search_stock(keyword_entry.get()))
+        search_button.pack()
+
+    def search_stock(self, keyword):
+        # キーワードで完全一致する商品名をフィルタリング
+        filtered_stock = {(category, name): quantity for (category, name), quantity in self.stock.items() if keyword.lower() == name.lower()}
+
+        # 検索結果を表示するウィンドウを作成
+        search_window = tk.Toplevel(self)
+        search_window.title("検索結果")
+        search_window.geometry("400x300")
+        search_window.grab_set()  # 親ウィンドウが操作できないようにする
+
+        # 検索結果を表示するテキストボックスを作成
+        search_text = tk.Text(search_window)
+        search_text.pack()
+
+        # 検索結果を表示
+        if filtered_stock:
+            for (category, name), quantity in filtered_stock.items():
+                search_text.insert(tk.END, f"{category} - {name}: {quantity}\n")
+        else:
+            search_text.insert(tk.END, "一致する商品が見つかりませんでした。")
+
+# メインウィンドウを作成
+root = Mywindow()
+# メインループを開始
+root.mainloop() 
+             
